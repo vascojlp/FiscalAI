@@ -1,0 +1,50 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fiscalai_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fiscalai
+      POSTGRES_USER: fiscalai
+      POSTGRES_PASSWORD: fiscalai_secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fiscalai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fiscalai_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://fiscalai:fiscalai_secret@postgres:5432/fiscalai
+      JWT_SECRET: fiscalai_jwt_super_secret_change_in_production
+      PORT: 3001
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fiscalai_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

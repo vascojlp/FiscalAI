@@ -77,7 +77,7 @@ export default function RelatoriosPage() {
   const handleEditRelatorio = (rel) => {
     setFormData({
       titulo: rel.titulo,
-      conteudo: rel.conteudo,
+      conteudo: rel.conteudo || '',
       status: rel.status,
       visita_id: rel.visita_id,
     });
@@ -105,7 +105,7 @@ export default function RelatoriosPage() {
   const filteredRelatorios = relatorios.filter(rel => {
     const matchStatus = filterStatus === 'all' || rel.status === filterStatus;
     const matchSearch =
-      rel.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (rel.titulo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (rel.visita_data && rel.visita_data.includes(searchTerm));
     return matchStatus && matchSearch;
   });
@@ -193,73 +193,76 @@ export default function RelatoriosPage() {
         <p className="empty-state">Nenhum relatório encontrado</p>
       ) : (
         <div className="relatorios-list">
-          {filteredRelatorios.map(rel => (
-            <div key={rel.id} className={`relatorio-card status-${rel.status}`}>
-              <div className="relatorio-header-card">
-                <div>
-                  <h3>{rel.titulo}</h3>
-                  <p className="relatorio-meta">
-                    <span className="status-badge">{rel.status}</span>
-                    <span className="version">v{rel.versao}</span>
-                    {rel.visita_data && <span className="date">📅 {rel.visita_data}</span>}
-                  </p>
-                  <p className="relatorio-info">
-                    Criado por: <strong>{rel.created_by_name || 'Desconhecido'}</strong>
-                    {rel.edited_by_name && ` | Editado por: ${rel.edited_by_name}`}
-                  </p>
-                  <p className="relatorio-timestamps">
-                    Criado: {new Date(rel.created_at).toLocaleString('pt-PT')} |
-                    Atualizado: {new Date(rel.updated_at).toLocaleString('pt-PT')}
-                  </p>
+          {filteredRelatorios.map(rel => {
+            const conteudo = rel.conteudo || '';
+            return (
+              <div key={rel.id} className={`relatorio-card status-${rel.status}`}>
+                <div className="relatorio-header-card">
+                  <div>
+                    <h3>{rel.titulo}</h3>
+                    <p className="relatorio-meta">
+                      <span className="status-badge">{rel.status}</span>
+                      <span className="version">v{rel.versao}</span>
+                      {rel.visita_data && <span className="date">📅 {rel.visita_data}</span>}
+                    </p>
+                    <p className="relatorio-info">
+                      Criado por: <strong>{rel.created_by_name || 'Desconhecido'}</strong>
+                      {rel.edited_by_name && ` | Editado por: ${rel.edited_by_name}`}
+                    </p>
+                    <p className="relatorio-timestamps">
+                      Criado: {new Date(rel.created_at).toLocaleString('pt-PT')} |
+                      Atualizado: {new Date(rel.updated_at).toLocaleString('pt-PT')}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="relatorio-preview">
-                {rel.conteudo.substring(0, 200)}
-                {rel.conteudo.length > 200 ? '...' : ''}
-              </div>
+                <div className="relatorio-preview">
+                  {conteudo.substring(0, 200)}
+                  {conteudo.length > 200 ? '...' : ''}
+                </div>
 
-              <div className="relatorio-actions">
-                <button
-                  className="btn-small btn-edit"
-                  onClick={() => handleEditRelatorio(rel)}
-                  title="Editar"
-                >
-                  ✏️ Editar
-                </button>
-                <button
-                  className="btn-small btn-copy"
-                  onClick={() => handleCopyRelatorio(rel.id)}
-                  title="Duplicar"
-                >
-                  📋 Copiar
-                </button>
-                <div className="export-buttons">
+                <div className="relatorio-actions">
                   <button
-                    className="btn-small btn-export"
-                    onClick={() => handleExportRelatorio(rel.id, 'txt')}
-                    title="Exportar como TXT"
+                    className="btn-small btn-edit"
+                    onClick={() => handleEditRelatorio(rel)}
+                    title="Editar"
                   >
-                    📄 TXT
+                    ✏️ Editar
                   </button>
                   <button
-                    className="btn-small btn-export"
-                    onClick={() => handleExportRelatorio(rel.id, 'md')}
-                    title="Exportar como Markdown"
+                    className="btn-small btn-copy"
+                    onClick={() => handleCopyRelatorio(rel.id)}
+                    title="Duplicar"
                   >
-                    📝 MD
+                    📋 Copiar
+                  </button>
+                  <div className="export-buttons">
+                    <button
+                      className="btn-small btn-export"
+                      onClick={() => handleExportRelatorio(rel.id, 'txt')}
+                      title="Exportar como TXT"
+                    >
+                      📄 TXT
+                    </button>
+                    <button
+                      className="btn-small btn-export"
+                      onClick={() => handleExportRelatorio(rel.id, 'md')}
+                      title="Exportar como Markdown"
+                    >
+                      📝 MD
+                    </button>
+                  </div>
+                  <button
+                    className="btn-small btn-delete"
+                    onClick={() => handleDeleteRelatorio(rel.id)}
+                    title="Eliminar"
+                  >
+                    🗑️ Eliminar
                   </button>
                 </div>
-                <button
-                  className="btn-small btn-delete"
-                  onClick={() => handleDeleteRelatorio(rel.id)}
-                  title="Eliminar"
-                >
-                  🗑️ Eliminar
-                </button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

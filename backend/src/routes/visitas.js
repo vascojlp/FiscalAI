@@ -241,10 +241,32 @@ Usa linguagem técnica formal portuguesa. Sê específico e detalhado nas análi
 
   const relatorio = data.response || '';
 
+  // Guardar na visita (sistema legado — mantido para compatibilidade)
   await pool.query(
     "UPDATE visitas SET relatorio=$1, relatorio_gerado_at=NOW(), updated_at=NOW() WHERE id=$2",
     [relatorio, req.params.id]
   );
+
+  // ── Sincronizar com tabela relatorios ──────────────────────────────────────
+  const titulo = `Relatório da Visita n.º ${v.numero_visita} — ${v.obra_nome}`;
+  const existente = await pool.query(
+    "SELECT id FROM relatorios WHERE visita_id=$1 ORDER BY created_at DESC LIMIT 1",
+    [req.params.id]
+  );
+  if (existente.rows[0]) {
+    await pool.query(
+      `UPDATE relatorios SET conteudo=$1, titulo=$2, status='approved',
+       versao=versao+1, edited_by=$3, updated_at=NOW() WHERE id=$4`,
+      [relatorio, titulo, req.user.id, existente.rows[0].id]
+    );
+  } else {
+    await pool.query(
+      `INSERT INTO relatorios (visita_id, obra_id, titulo, conteudo, status, created_by, edited_by)
+       VALUES ($1,$2,$3,$4,'approved',$5,$5)`,
+      [req.params.id, v.obra_id, titulo, relatorio, req.user.id]
+    );
+  }
+
   res.json({ relatorio });
 }));
 
